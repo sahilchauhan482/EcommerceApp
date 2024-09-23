@@ -1,0 +1,45 @@
+﻿@{
+    ViewData["Title"] = "Order Management";
+}
+
+<h2>Order Management</h2>
+<br />
+<div class="row">
+    <div class="col-3">
+    <label for="fromDate">From Date:</label>
+    <input type="date" id="fromDate" class="form-control" style="margin-right: 10px;">
+    </div>
+    <div class="col-3">
+    <label for="toDate">To Date:</label>
+    <input type="date" id="toDate" class="form-control" style="margin-right: 10px;">
+    </div>
+</div>
+
+<br />
+<div class="table table-responsive">
+    <table id="orderTable" class=" table table-bordered table-active table-hover ">
+        <thead>
+            <tr>
+                <th>Order ID</th>
+                <th>Status</th>
+                <th>Date</th>
+                <th>Name</th>
+                <th>Phone Number</th>
+                <th>Email</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+</div>
+<br />
+<br />
+
+@section scripts
+    {
+    <script src="~/js/AllOrder.js"></script>
+}
+
+
+
+   

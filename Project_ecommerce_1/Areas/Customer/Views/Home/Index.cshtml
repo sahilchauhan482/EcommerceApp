@@ -1,0 +1,87 @@
+﻿@model IEnumerable<Project_ecommerce_1.Model.Product>
+
+
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha384-GLhlTQ8iij8PQ6qMZf+5Pj40uL+5+CKph5LcZ5e+ZPnBrEPL5EPf5J2bcMVPpans" crossorigin="anonymous">
+
+<form asp-action="Search" asp-controller="Home" method="get" class="form-inline my-2 my-lg-0">
+    <select class="form-control mr-sm-2" name="searchField">
+        <option value="">Select</option>
+        <option value="Title">Title</option>
+        <option value="Author">Author</option>
+        <!-- Add more options if needed -->
+    </select>
+    <input class="form-control mr-sm-2" type="text" name="searchString" placeholder="Type..." aria-label="Search">
+    <button class="btn btn-outline-success my-2 my-sm-0" type="submit">
+        <i class="fas fa-search"></i>&nbsp;Search
+        
+    </button>
+</form>
+<br />
+<div class="text-right mt-2">
+    <a asp-action="MostPurchasedProduct" asp-controller="Home" class="btn btn-success">
+        Most Purchased Product
+    </a>
+</div>
+<div class="row">
+    @if (Model.Any())
+    {
+        foreach (var product in Model)
+        {
+            <div class="col-lg-3 col-md-6">
+                <div class="row p-2">
+                    <div class="col-12 p-1" style="border: 1px solid #008cba; border-radius: 5px;">
+                        <div class="card" style="border: 0px;">
+                            <img src="@product.ImageUrl" alt="Card image cap" class="card-img-top rounded" style="height:240px" />
+                            <div class="pl-1">
+                                <p class="card-title h5"><b style="color: #2c3e50">@product.Title</b></p>
+                                <p class="card-title text-primary">by <b>@product.Author</b></p>
+                            </div>
+                            <div style="padding-left: 5px;">
+                                <p>List Price: <strike><b class="">@product.PriceList.ToString("C")</b></strike></p>
+                            </div>
+                            <div style="padding-left: 5px;">
+                                <p style="color: maroon">As low as: <b class="">@product.Price.ToString("C")</b></p>
+                            </div>
+                        </div>
+                        <div>
+                            <a asp-action="Details" class="btn btn-primary form-control" asp-route-id="@product.Id">Details</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+    else
+    {
+        <p>No results found.</p>
+    }
+</div>
+@if (ViewBag.FrequentlyBoughtTogetherProduct != null)
+{
+    <div class="mt-4">
+        <h4>Suggested Product Frequently Bought Together:</h4>
+        <div class="col-lg-3 col-md-6">
+            <div class="row p-2">
+                <div class="col-12 p-1" style="border: 1px solid #008cba; border-radius: 5px;">
+                    <div class="card" style="border: 0px;">
+                        <img src="@ViewBag.FrequentlyBoughtTogetherProduct.ImageUrl" alt="Card image cap" class="card-img-top rounded" style="height:240px" />
+                        <div class="pl-1">
+                            <p class="card-title h5"><b style="color: #2c3e50">@ViewBag.FrequentlyBoughtTogetherProduct.Title</b></p>
+                            <p class="card-title text-primary">by <b>@ViewBag.FrequentlyBoughtTogetherProduct.Author</b></p>
+                        </div>
+                        <div style="padding-left: 5px;">
+                            <p>List Price: <strike><b class="">@ViewBag.FrequentlyBoughtTogetherProduct.PriceList.ToString("C")</b></strike></p>
+                        </div>
+                        <div style="padding-left: 5px;">
+                            <p style="color: maroon">As low as: <b class="">@ViewBag.FrequentlyBoughtTogetherProduct.Price.ToString("C")</b></p>
+                        </div>
+                    </div>
+                    <div>
+                        <a asp-action="Details" class="btn btn-primary form-control" asp-route-id="@ViewBag.FrequentlyBoughtTogetherProduct.Id">Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

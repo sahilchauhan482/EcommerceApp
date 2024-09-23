@@ -1,0 +1,120 @@
+﻿@model Project_ecommerce_1.Model.ViewModels.ShoppingCartVM
+<form asp-action="Summary" method="get">
+    <br />
+    <div class="backgroundWhiteBorder">
+        <div class="container">
+            <div class="card">
+                <div class="card-header bg-dark text-light ml-0 row container">
+                    <div class="col-6">
+                        <img src="~/images/logo/shopping cat.png" style="height:30px" />     &nbsp;
+                        Shopping Cart
+                    </div>
+                    <div class="col-6 text-right">
+                        <a asp-action="Index" asp-controller="Home" class="btn btn-outline-info btn-sm">Continue Shopping</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    @foreach (var list in Model.Listcart)
+                    {
+
+                        var amount = list.Price * list.Count;
+                        <div class="row">
+                            <div class="d-none d-lg-block col-lg-1 text-center py-2">
+                                <img src="@list.Product.ImageUrl" class="rounded" width="100%" />
+                            </div>
+                            <div class="col-12 text-sm-center col-lg-6 text-lg-left">
+                                <h5><strong>@list.Product.Title</strong></h5>
+                                <p><small>@Html.Raw( list.Product.Description)</small></p>
+                            </div>
+
+                            <div class="form-check">
+                                <input class="form-check-input custom-checkbox"
+                                       type="checkbox"
+                                       name="SelectedItems"
+                                       value="@list.Id"
+                                       data-amount="@amount"
+                                       onclick="updateTotal()" />
+                            </div>
+
+                            <div class="col-12 text-sm-center col-lg-5 text-lg-right row">
+                                <div class="col-4 text-md-right" style="padding-top:5px;">
+
+                                    <h6><strong>@list.Price<span class="text-muted">x</span>@list.Count=@amount</strong></h6>
+                                </div>
+                                <div class="col-6 col-sm-4 col-lg-6">
+                                    <div class="float-right mx-1">
+                                        <a asp-action="Plus" asp-route-id="@list.Id" class="btn btn-primary">
+                                            <i class="fas fa-plus"></i>
+                                        </a>
+                                    </div>
+                                    <div class="float-right mx-1">
+                                        <a asp-action="Minus" asp-route-id="@list.Id" class="btn btn-danger">
+                                            <i class="fas fa-minus"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="col-2 col-sm-4 col-lg-2 text-right">
+                                    <a asp-action="Delete" asp-route-id="@list.Id" class="btn btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+
+                            </div>
+                        </div>
+                    }
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-12 col-md-6 offset-md-6 col-lg-4 offset-lg-8 pr-4">
+                            <ul class="list-group">
+                                <li class="list-group-item d-flex justify-content-between bg-light">
+                                    <span class="text-info"> Total (USD)</span>
+                                    <strong class="text-info">$ <span id="txtOrderTotal">@Model.orderHeader.OrderTotal</span></strong>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="card-footer row">
+
+                        <div class="col-sm-12 col-lg-4 col-md-6 offset-lg-8 offset-md-6 ">
+                            
+                            <input type="submit" value="Summary" class="btn btn-success form-control" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+<style>
+    /* Added: Custom style for the checkbox to increase its size */
+    .custom-checkbox {
+        transform: scale(1.5); /* Adjust the scale factor to change the size */
+        margin-top: 0.5rem; /* Optional: Adjust the margin for better alignment */
+    }
+</style>
+<script>
+    function updateTotal() {
+      
+        var checkedtotal = 0;
+        var total = 0;
+        var isCheckboxChecked = false;
+        var checkboxes = document.querySelectorAll('.custom-checkbox');
+
+        checkboxes.forEach(function (checkbox) {
+            var amount = parseFloat(checkbox.getAttribute('data-amount'));
+
+            total += amount;
+
+            if (checkbox.checked) {
+                checkedtotal += amount;
+                isCheckboxChecked = true;
+            }
+        });
+        let finalTotal = isCheckboxChecked ? checkedtotal : total;
+        document.getElementById('txtOrderTotal').innerText = finalTotal.toFixed(2);
+    }
+</script>

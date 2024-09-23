@@ -1,0 +1,48 @@
+﻿@model Project_ecommerce_1.Model.CoverType
+@{
+    ViewData["Title"] = "Upsert";
+    var title = Model.Id != 0 ? "Edit Cover Type" : "New Cover Type";
+}
+
+<form method="post">
+    <div class="row">
+        <div class="col-10">
+            <h2 class="text-info">@title</h2>
+
+        </div>
+        <div class="col-8">
+            <div class="row p-2 m-2 form-group">
+                <div class="col-4">
+                <label asp-for="@Model.Name"></label>
+
+                </div>
+                <div class="col-8">
+                    <input asp-for="@Model.Name" class="form-control" />
+
+                </div>
+                
+            </div>
+            <div class="row p-2 m-2 form-group">
+                <div class="col-8 offset-4">
+                    @if (Model.Id !=0)
+                    {
+                        <partial name="Editbutton" />
+                    }
+                    else
+                    {
+                        <partial name="_Savebutton" />
+                    }
+
+            </div>
+
+
+        </div>
+
+    </div>
+
+</form>
+@section scripts
+{
+    <partial name="_ValidationScriptsPartial"/>
+}
+

@@ -1,0 +1,258 @@
+﻿@model Project_ecommerce_1.Model.ViewModels.ShoppingCartVM
+@using Microsoft.Extensions.Options
+@inject IOptions<Project_ecommerce_1.Utility.StripeSetting> stripe;
+
+<form method="post" id="checkoutForm" >
+    <br />
+    <div class="backgroundWhiteBorder">
+        <div class="container">
+            <div class="card">
+                <div class="card-header bg-dark text-light ml-0 row container">
+                    <div class="col-6">
+                        <img src="~/images/logo/shopping cat.png" style="height:30px" />  &nbsp;
+                        Order Summary
+                    </div>
+                    <div class="col-6 text-right">
+                        <a asp-action="Index" class="btn btn-outline-info btn-sm">Back to Cart</a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="container rounded p-2">
+                        <div class="row">
+                            <div class="col-12 col-lg-6 pb-4">
+                                <div class="row">
+                                    <h4 class="d-flex justify-content-between align-items-center mb-3">
+                                        <span class="text-info">Delivery Address:</span>
+                                    </h4>
+
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>Select Address</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <select id="addressDropdown" class="form-control" onchange="displaySelectedAddress()">
+                                            <option value="">Select an Address</option>
+                                            @foreach (var address in Model.UserAddresses)
+                                            {
+                                                <option value="@address.Id">@address.FullAddress</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>Name</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtName" asp-for="@Model.orderHeader.Name" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>Phone</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtPhone" asp-for="@Model.orderHeader.PhoneNumber" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>Street Address</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtStreet" asp-for="@Model.orderHeader.StreetAddress" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>City</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtCity" asp-for="@Model.orderHeader.City" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>State</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtState" asp-for="@Model.orderHeader.State" class="form-control" />
+                                    </div>
+                                </div>
+                                <div class="row my-1">
+                                    <div class="col-3">
+                                        <label>Postal Code</label>
+                                    </div>
+                                    <div class="col-9">
+                                        <input type="text" id="txtPostalCode" asp-for="@Model.orderHeader.PostalCode" class="form-control" />
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-5 offset-lg-1">
+                                <h4 class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="text-info">Order Summary:</span>
+                                </h4>
+                                <ul class="list-group mb-3">
+                                    @foreach (var item in Model.Listcart)
+                                    {
+                                        <li class="list-group-item d-flex justify-content-between">
+                                            <div>
+                                                <h6 class="my-0">@item.Product.Title</h6>
+                                                <small class="text-muted">Quantity:@item.Count</small>
+                                                <input type="hidden" name="selectedItems" value="@item.Id" />
+
+                                            </div>
+                                            <span class="text-muted">$ @(item.Price * item.Count)</span>
+                                        </li>
+                                    }
+
+                                    <li class="list-group-item d-flex justify-content-between bg-light">
+                                        <small class="text-info">Total (USD)</small>
+                                        <strong class="text-info">$@Model.orderHeader.OrderTotal</strong>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="row">
+                        <div class="col-12 col-md-8 pt-2">
+                            <p style="color:maroon; font-size:14px;">Estimate Arrival Date: @DateTime.Now.AddDays(7).ToShortDateString() - @DateTime.Now.AddDays(14).ToShortDateString()</p>
+                        </div>
+                        @if (!Model.orderHeader.ApplicationUser.EmailConfirmed)
+                        {
+                            <div class="col-8 @ViewBag.EmailCSS">
+                                <p>@ViewBag.EmailMessage</p>
+                            </div>
+
+                            <div class="col-4">
+                                <!-- Hidden field to indicate VerifyEmail button click -->
+                                <input type="hidden" name="actionType" value="VerifyEmail" />
+
+                                <!-- submit button for VerifyEmail -->
+                                <button type="submit" name="VerifyEmail" class="btn btn-outline-warning" onclick="submitForm(event)">
+                                    Click here to resend confirmation email..!!
+                                </button>
+                            </div>
+                           
+                        }
+                        else
+
+                        {
+                            @if (Model.orderHeader.OrderTotal !=0)
+                            {
+                                <div class="col-12 col-md-4">
+                                    @{
+                                        var TotalAmount = Model.orderHeader.OrderTotal * 100;
+                                    }
+                                    <script src="https://checkout.stripe.com/checkout.js"
+                                            class="stripe-button"
+                                            data-key="@stripe.Value.PublishableKey"
+                                            data-amount="@TotalAmount"
+                                            data-name="Book shopping project"
+                                            data-description="Get Book For Testing"
+                                            data-locale="auto"
+                                            data-label="Need to do payment first before placing the order "
+                                            data-allow-remember-me="false"
+                                            data-image="https://stripe.com/img/documentation/checkout/marketplace.png">
+
+                                    </script>
+                                    <script>
+                                        var el = document.getElementsByClassName("stripe-button-el");
+                                        el[0].style.display = "none";
+                                    </script>
+
+                                    
+
+                                    <!-- submit button for Place Order -->
+
+                                    <button type="submit" name="PlaceOrder" class="btn btn-success form-control">Place Order</button>
+
+                                </div>
+
+                            }
+                           
+                        }
+                        
+
+                        
+                            
+                        
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    
+
+
+    <script>
+        function displaySelectedAddress() {
+            var selectedAddressId = document.getElementById("addressDropdown").value;
+            var selectedAddress = @Html.Raw(Json.Serialize(Model.UserAddresses));
+
+            var addressDetails = selectedAddress.find(a => a.id == parseInt(selectedAddressId));
+
+            if (addressDetails) {
+                document.getElementById("txtName").value = addressDetails.name || '';
+                document.getElementById("txtPhone").value = addressDetails.phoneNumber || '';
+                document.getElementById("txtStreet").value = addressDetails.streetAddress || '';
+                document.getElementById("txtCity").value = addressDetails.city || '';
+                document.getElementById("txtState").value = addressDetails.state || '';
+                document.getElementById("txtPostalCode").value = addressDetails.postalCode || '';
+            }
+        }
+    </script>
+    <script>
+        function submitForm(event) {
+            event.preventDefault(); // Form submission rokne ke liye
+
+            var actionType = event.target.getAttribute("name");
+
+            if (actionType === "VerifyEmail") {
+                // VerifyEmail button ke liye AJAX call
+                $.ajax({
+                    url: '/Customer/Cart/VerifyEmailAjax', // Aapke controller ke URL ko sahi se update karein
+                    type: 'POST',
+                    success: function (data) {
+                        // Yahan aap success ke baad kuch aur actions le sakte hain
+                        if (data.success) {
+                            // SweetAlert for success
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Email Verification Sent',
+                                text: data.message,
+                                confirmButtonColor: '#28a745'
+                            });
+                        } else {
+                            // SweetAlert for error
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: 'Error in email verification: ' + data.message,
+                                confirmButtonColor: '#dc3545'
+                            });
+                        }
+                    },
+                    error: function (error) {
+                        // SweetAlert for generic error
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Error',
+                            text: 'An error occurred during email verification.',
+                            confirmButtonColor: '#dc3545'
+                        });
+                    }
+                });
+           
+            }
+        }
+    </script>
+   
+</form>
