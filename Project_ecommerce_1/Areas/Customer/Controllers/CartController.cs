@@ -194,7 +194,6 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
             ShoppingCartVM.orderHeader.ApplicationUser = _unitOfWork.ApplicationUser.FirstOrDefault(au => au.Id == Claim.Value);
             ShoppingCartVM.Listcart = _unitOfWork.ShoppingCart.GetAll(SC => SC.ApplicationUserId == Claim.Value && 
             (SelectedItems == null || !SelectedItems.Any() || SelectedItems.Contains(SC.Id)), IncludeProperties: "Product");
-            //if (ShoppingCartVM.Listcart.Count() == 0) return NotFound();
             ShoppingCartVM.orderHeader.OrderStatus = SD.OrderStatusPending;
             ShoppingCartVM.orderHeader.PaymentStatus = SD.PaymentStatusPending;
             ShoppingCartVM.orderHeader.OrderDate = DateTime.Now;
@@ -272,11 +271,17 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
                     messageBuilder.AppendLine("Sincerely,");
                     messageBuilder.AppendLine("Rana Book store App Team");
 
-                    // Use the EmailSender to send the email
-                    await _emailSender.SendEmailAsync(ShoppingCartVM.orderHeader.ApplicationUser.Email, subject, messageBuilder.ToString());
 
-                    string orderDetails = GenerateOrderDetailsForSMS(ShoppingCartVM); // Implement this method to generate order details
-                    await _twilioService.SendOrderConfirmationSMS(ShoppingCartVM.orderHeader.PhoneNumber, orderDetails);
+                    string orderDetails = GenerateOrderDetailsForSMS(ShoppingCartVM);
+                    try
+                    {
+                        await _emailSender.SendEmailAsync(ShoppingCartVM.orderHeader.ApplicationUser.Email, subject, messageBuilder.ToString());
+                        await _twilioService.SendOrderConfirmationSMS(ShoppingCartVM.orderHeader.PhoneNumber, orderDetails);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                     _unitOfWork.ShoppingCart.RemoveRange(ShoppingCartVM.Listcart);
                     _unitOfWork.save();
 
