@@ -2,16 +2,14 @@
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
-using Microsoft.EntityFrameworkCore.Metadata.Internal;
-using Project_ecommerce_1.DataAccess.Repository;
 using Project_ecommerce_1.DataAccess.Repository.IRepository;
 using Project_ecommerce_1.Model;
 using Project_ecommerce_1.Model.ViewModels;
 using Project_ecommerce_1.Utility;
 using Stripe;
 using System.Security.Claims;
-using System.Text.Encodings.Web;
 using System.Text;
+using System.Text.Encodings.Web;
 using Address = Project_ecommerce_1.Model.Address;
 
 namespace Project_ecommerce_1.Areas.Customer.Controllers
@@ -21,15 +19,17 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IEmailSender _emailSender;
-        private static bool isemailConfirm=false;
+        private bool isemailConfirm = false;
         private readonly UserManager<IdentityUser> _userManager;
         private readonly TwilioService _twilioService;
-        public CartController(IUnitOfWork unitOfWork,IEmailSender emailSender,UserManager<IdentityUser> userManager,TwilioService twilioService)
+        private readonly IWebHostEnvironment _webHostEnvironment;
+        public CartController(IUnitOfWork unitOfWork, IEmailSender emailSender, UserManager<IdentityUser> userManager, TwilioService twilioService, IWebHostEnvironment webHostEnvironment)
         {
             _unitOfWork = unitOfWork;
             _emailSender = emailSender;
             _userManager = userManager;
             _twilioService = twilioService;
+            _webHostEnvironment = webHostEnvironment;
         }
         [BindProperty]
         public ShoppingCartVM ShoppingCartVM { get; set; }
@@ -58,6 +58,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
 
         public IActionResult Plus(int id)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var cart = _unitOfWork.ShoppingCart.FirstOrDefault(sc => sc.Id == id);
             cart.Count++;
             _unitOfWork.save();
@@ -66,6 +67,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
 
         public IActionResult Minus(int id)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var cart = _unitOfWork.ShoppingCart.FirstOrDefault(sc => sc.Id == id);
             if (cart.Count == 1)
                 cart.Count = 1;
@@ -77,6 +79,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
 
         public IActionResult Delete(int id)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var cart = _unitOfWork.ShoppingCart.FirstOrDefault(c => c.Id == id);
             _unitOfWork.ShoppingCart.Remove(cart);
             _unitOfWork.save();
@@ -92,6 +95,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
 
         public IActionResult Summary(List<int> SelectedItems)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var ClaimIdentity = (ClaimsIdentity)User.Identity;
             var Claim = ClaimIdentity.FindFirst(ClaimTypes.NameIdentifier);
 
@@ -116,7 +120,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
                 State = x.State,
                 Id = x.Id,
             }).DistinctBy(x => x.FullAddress).ToList();
-            
+
 
             ShoppingCartVM.orderHeader.ApplicationUser = _unitOfWork.ApplicationUser.FirstOrDefault(AU => AU.Id == Claim.Value);
             foreach (var List in ShoppingCartVM.Listcart)
@@ -127,8 +131,6 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
                 {
                     List.Product.Description = List.Product.Description.Substring(0, 100) + "....";
                 }
-
-
             }
 
             ShoppingCartVM.orderHeader.Name = ShoppingCartVM.orderHeader.ApplicationUser.Name;
@@ -140,7 +142,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
 
             if (!isemailConfirm)
             {
-                ViewBag.EmailMessage="Need to verify the email before placing the order";
+                ViewBag.EmailMessage = "Need to verify the email before placing the order";
                 ViewBag.EmailCSS = "text-success";
                 isemailConfirm = false;
 
@@ -188,11 +190,12 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
         [ActionName("Summary")]
         public async Task<IActionResult> PlaceOrder(List<int> SelectedItems, string stripeToken)
         {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
             var ClaimIdentity = (ClaimsIdentity)User.Identity;
             var Claim = ClaimIdentity.FindFirst(ClaimTypes.NameIdentifier);
-            
+
             ShoppingCartVM.orderHeader.ApplicationUser = _unitOfWork.ApplicationUser.FirstOrDefault(au => au.Id == Claim.Value);
-            ShoppingCartVM.Listcart = _unitOfWork.ShoppingCart.GetAll(SC => SC.ApplicationUserId == Claim.Value && 
+            ShoppingCartVM.Listcart = _unitOfWork.ShoppingCart.GetAll(SC => SC.ApplicationUserId == Claim.Value &&
             (SelectedItems == null || !SelectedItems.Any() || SelectedItems.Contains(SC.Id)), IncludeProperties: "Product");
             ShoppingCartVM.orderHeader.OrderStatus = SD.OrderStatusPending;
             ShoppingCartVM.orderHeader.PaymentStatus = SD.PaymentStatusPending;
@@ -234,7 +237,7 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
                 };
                 #region Payment
                 var service = new ChargeService();
-                Charge charge = service.Create(options);
+                Charge charge = await service.CreateAsync(options);
                 if (charge.BalanceTransactionId == null)
                 {
                     ShoppingCartVM.orderHeader.PaymentStatus = SD.PaymentStatusRejected;
@@ -249,34 +252,29 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
                     ShoppingCartVM.orderHeader.OrderDate = DateTime.Now;
 
                     // Send well-structured order confirmation email to the customer
-                    string subject = "Order Confirmation - Shopping App";
-                    StringBuilder messageBuilder = new StringBuilder();
-                    messageBuilder.AppendLine($"Dear {ShoppingCartVM.orderHeader.ApplicationUser.Name},");
-                    messageBuilder.AppendLine();
-                    messageBuilder.AppendLine("Thank you for placing an order with Shopping App. Your order details are as follows:");
+                    string emailTemplatePath = Path.Combine(_webHostEnvironment.WebRootPath, "EmailContext", "OrderConfirmation.html");
+                    string emailTemplate = await System.IO.File.ReadAllTextAsync(emailTemplatePath);
+                    string orderDate = DateTime.Now.ToString("MMMM dd, yyyy");
+                    string expectedDeliveryDate = DateTime.Now.AddDays(4).ToString("MMMM dd, yyyy");
+                    // Inject order details into the HTML template
 
-                    foreach (var orderDetail in ShoppingCartVM.Listcart)
-                    {
-                        messageBuilder.AppendLine($"Order Id: {ShoppingCartVM.orderHeader.Id}");
-                        messageBuilder.AppendLine($"Product: {orderDetail.Product.Title}");
-                        messageBuilder.AppendLine($"Quantity: {orderDetail.Count}");
-                        messageBuilder.AppendLine($"Price: ${orderDetail.Price}");
-                        messageBuilder.AppendLine();
-                    }
-
-                    messageBuilder.AppendLine($"Total Amount: ${ShoppingCartVM.orderHeader.OrderTotal}");
-                    messageBuilder.AppendLine();
-                    messageBuilder.AppendLine("Thank you for shopping with us!");
-                    messageBuilder.AppendLine();
-                    messageBuilder.AppendLine("Sincerely,");
-                    messageBuilder.AppendLine("Rana Book store App Team");
-
-
-                    string orderDetails = GenerateOrderDetailsForSMS(ShoppingCartVM);
+                    string emailBody = emailTemplate
+                        .Replace("{CustomerName}", ShoppingCartVM.orderHeader.ApplicationUser.Name)
+                        .Replace("{OrderId}", ShoppingCartVM.orderHeader.Id.ToString())
+                        .Replace("{OrderDate}", ShoppingCartVM.orderHeader.OrderDate.ToString("MMMM dd, yyyy"))
+                        .Replace("{OrderDate}", orderDate)
+                        .Replace("{ExpectedDeliveryDate}", expectedDeliveryDate)
+                        .Replace("{OrderItems}", string.Join("", ShoppingCartVM.Listcart.Select(item => $@"
+                        <tr>
+                            <td>{item.Product.Title}</td>
+                            <td>{item.Count}</td>
+                            <td>${item.Price}</td>
+                        </tr>")))
+                        .Replace("{OrderTotal}", ShoppingCartVM.orderHeader.OrderTotal.ToString());
                     try
                     {
-                        await _emailSender.SendEmailAsync(ShoppingCartVM.orderHeader.ApplicationUser.Email, subject, messageBuilder.ToString());
-                        await _twilioService.SendOrderConfirmationSMS(ShoppingCartVM.orderHeader.PhoneNumber, orderDetails);
+                        await _emailSender.SendEmailAsync(ShoppingCartVM.orderHeader.ApplicationUser.Email, "Order Confirmation - Shopping App", emailBody);
+                        await _twilioService.SendOrderConfirmationSMS(ShoppingCartVM.orderHeader.PhoneNumber, emailBody);
                     }
                     catch (Exception ex)
                     {
@@ -298,28 +296,10 @@ namespace Project_ecommerce_1.Areas.Customer.Controllers
             return RedirectToAction("OrderConfirmation", "Cart", new { id = ShoppingCartVM.orderHeader.Id });
         }
 
-        private string GenerateOrderDetailsForSMS(ShoppingCartVM shoppingCartVM)
+        public IActionResult OrderConfirmation(int id)
         {
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine($"Order Confirmation - Shopping App");
-            sb.AppendLine($"Dear {shoppingCartVM.orderHeader.ApplicationUser.Name},");
-            sb.AppendLine($"Thank you for placing an order with Shopping App. Your order details are as follows:");
+            if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            foreach (var orderDetail in shoppingCartVM.Listcart)
-            {
-                sb.AppendLine($"Order ID:{shoppingCartVM.orderHeader.Id},Product: {orderDetail.Product.Title}, Quantity: {orderDetail.Count}, Price: ${orderDetail.Price}");
-            }
-
-            sb.AppendLine($"Total Amount: ${shoppingCartVM.orderHeader.OrderTotal}");
-            sb.AppendLine("Thank you for shopping with us!");
-
-            return sb.ToString();
-        }
-
-        public async Task< IActionResult> OrderConfirmation(int id)
-        {
-           
-            
             return View(id);
         }
     }

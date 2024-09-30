@@ -1,0 +1,183 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f7f7;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        .email-container {
+            max-width: 650px;
+            margin: 20px auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .email-header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            border-top-left-radius: 8px;
+            border-top-right-radius: 8px;
+        }
+
+            .email-header h1 {
+                margin: 0;
+                font-size: 24px;
+            }
+
+        .email-body {
+            padding: 20px;
+            color: #333;
+        }
+
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+        }
+
+        .email-body p {
+            font-size: 16px;
+            line-height: 1.6;
+            margin-bottom: 20px;
+        }
+
+        .order-details {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+            .order-details th,
+            .order-details td {
+                border: 1px solid #ddd;
+                padding: 12px;
+                text-align: left;
+            }
+
+            .order-details th {
+                background-color: #4CAF50;
+                color: white;
+                font-weight: bold;
+            }
+
+            .order-details td {
+                background-color: #f9f9f9;
+            }
+
+        .order-total {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: right;
+            margin-top: 10px;
+        }
+
+        .email-footer {
+            text-align: center;
+            font-size: 14px;
+            color: #888;
+            margin-top: 30px;
+        }
+
+        .order-summary {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+            .order-summary h2 {
+                margin: 0;
+                font-size: 20px;
+            }
+
+            .order-summary p {
+                margin: 5px 0;
+                font-size: 16px;
+            }
+
+        .delivery-info {
+            background-color: #e8f5e9;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+            .delivery-info h3 {
+                margin: 0;
+                font-size: 18px;
+                color: #2e7d32;
+            }
+
+            .delivery-info p {
+                margin: 5px 0;
+                font-size: 16px;
+                color: #2e7d32;
+            }
+
+        .footer-text {
+            font-size: 14px;
+            color: #666;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-container">
+        <div class="email-header">
+            <h1>Order Confirmation</h1>
+        </div>
+
+        <div class="email-body">
+            <p class="greeting">Dear {CustomerName},</p>
+            <p>Thank you for placing an order with Shopping App! We are pleased to confirm your order. Below are the details of your purchase:</p>
+
+            <div class="order-summary">
+                <h2>Order Summary</h2>
+                <p><strong>Order ID:</strong> {OrderId}</p>
+                <p><strong>Order Date:</strong> {OrderDate}</p>
+            </div>
+
+            <table class="order-details">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Quantity</th>
+                        <th>Price</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Order Items will be injected here -->
+                    {OrderItems}
+                </tbody>
+            </table>
+
+            <p class="order-total">Total Amount: ${OrderTotal}</p>
+
+            <div class="delivery-info">
+                <h3>Estimated Delivery Information</h3>
+                <p><strong>Expected Delivery Date:</strong> {ExpectedDeliveryDate}</p>
+                <p>Our team is working hard to ensure your order reaches you as soon as possible. You can expect your order to be delivered within 4 days from the order date. We will send a notification once your order has been shipped.</p>
+            </div>
+
+            <p>If you have any questions or concerns, feel free to contact our support team.</p>
+            <p>Thank you for shopping with us!</p>
+        </div>
+
+        <div class="email-footer">
+            <p class="footer-text">Rana Book Store App Team</p>
+        </div>
+    </div>
+</body>
+
+</html>
